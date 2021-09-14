@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+	xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:omgdc="http://www.omg.org/spec/DD/20100524/DC"
+	xmlns:omgdi="http://www.omg.org/spec/DD/20100524/DI" xmlns:flowable="http://flowable.org/bpmn"
+	typeLanguage="http://www.w3.org/2001/XMLSchema" expressionLanguage="http://www.w3.org/1999/XPath"
+	targetNamespace="http://www.flowable.org/processdef">
+
+	<process id="leaveRequest" name="Leave Request" isExecutable="true">
+
+		<startEvent id="leaveRequestStartEvent" />
+
+		<sequenceFlow sourceRef="leaveRequestStartEvent" targetRef="leaveRequestApproveTask" />
+
+		<userTask id="leaveRequestApproveTask" name="Approve or reject request" flowable:candidateGroups="managers" />
+
+		<sequenceFlow sourceRef="leaveRequestApproveTask" targetRef="leaveRequestDecision" />
+
+		<exclusiveGateway id="leaveRequestDecision" />
+
+		<sequenceFlow sourceRef="leaveRequestDecision" targetRef="leaveRequestApproval">
+			<conditionExpression xsi:type="tFormalExpression">
+        <![CDATA[
+          ${approved}
+        ]]>
+			</conditionExpression>
+		</sequenceFlow>
+		<sequenceFlow sourceRef="leaveRequestDecision" targetRef="leaveRequestRejection">
+			<conditionExpression xsi:type="tFormalExpression">
+        <![CDATA[
+          ${!approved}
+        ]]>
+			</conditionExpression>
+		</sequenceFlow>
+
+		<serviceTask id="leaveRequestApproval" name="Enter leaves in external system"
+			flowable:class="zikzakjack.services.CallExternalSystemDelegate" />
+
+		<sequenceFlow sourceRef="leaveRequestApproval" targetRef="leaveRequestEndEvent" />
+
+		<serviceTask id="leaveRequestRejection" name="Send out rejection email"
+			flowable:class="zikzakjack.services.SendRejectionMail" />
+
+		<sequenceFlow sourceRef="leaveRequestRejection" targetRef="leaveRequestEndEvent" />
+
+		<endEvent id="leaveRequestEndEvent" />
+
+	</process>
+
+</definitions>

@@ -1,0 +1,189 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+	xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:omgdc="http://www.omg.org/spec/DD/20100524/DC"
+	xmlns:omgdi="http://www.omg.org/spec/DD/20100524/DI" xmlns:flowable="http://flowable.org/bpmn"
+	typeLanguage="http://www.w3.org/2001/XMLSchema" expressionLanguage="http://www.w3.org/1999/XPath"
+	targetNamespace="http://www.flowable.org/processdef">
+
+	<process id="providerApplication" name="Provider Application" isExecutable="true">
+
+		<userTask id="providerApplicationSubmission" name="Application Submission" />
+		<exclusiveGateway id="providerApplicationTypeDecision" name="Enrollment or Modification" />
+		<serviceTask id="providerApplicationEnrollmentProcessingDefaultOrgAssignment" name="Enrollment Default Org Assignment"
+			flowable:delegateExpression="${providerApplicationEnrollmentProcessingDefaultOrgAssignment}" />
+		<parallelGateway  id="providerApplicationEnrollmentProcessingParallelMailStart" name="Enrollment Notification mail to Org and Provider Start" />
+		<serviceTask id="providerApplicationEnrollmentProcessingMailToOrg" name="Enrollment Mail To Org"
+			flowable:delegateExpression="${providerApplicationEnrollmentProcessingMailToOrg}" />
+		<serviceTask id="providerApplicationEnrollmentProcessingMailToProvider" name="Enrollment Mail To Provider"
+			flowable:delegateExpression="${providerApplicationEnrollmentProcessingMailToProvider}" />
+		<parallelGateway  id="providerApplicationEnrollmentProcessingParallelMailEnd" name="Enrollment Notification mail to Org and Provider End" />
+		<inclusiveGateway id="providerApplicationEnrollmentAssignmentStart" />
+		<userTask id="providerApplicationEnrollmentAssignmentClaimTask" name="Claim Task" />
+		<userTask id="providerApplicationEnrollmentAssignmentAssignTask" name="Assign Task" />
+		<userTask id="providerApplicationEnrollmentAssignmentReassignTask" name="Reassign Task" />
+		<inclusiveGateway id="providerApplicationEnrollmentAssignmentEnd" />
+		<userTask id="providerApplicationEnrollmentProcessing" name="Enrollment Processing" />
+<!-- 		<boundaryEvent id="providerApplicationEnrollmentProcessingReminderTimer" cancelActivity="false" attachedToRef="providerApplicationEnrollmentProcessing"> -->
+<!-- 			<timerEventDefinition> -->
+<!-- 				<timeDuration>PT4H</timeDuration> -->
+<!-- 			</timerEventDefinition> -->
+<!-- 		</boundaryEvent> -->
+		<exclusiveGateway id="providerApplicationEnrollmentProcessingDecision" name="Enrollment Approved or Rejected" />
+<!-- 		<serviceTask id="providerApplicationEnrollmentApprovalMail" name="Enrollment Approval Mail" -->
+<!-- 			flowable:delegateExpression="${providerApplicationEnrollmentApprovalMail}" /> -->
+			<serviceTask id="providerApplicationEnrollmentApprovalMail" name="Enrollment Approval Mail" flowable:type="mail">
+				<extensionElements>
+					<flowable:field name="from" expression="${environment.getProperty('mail.providerapplication.from')}"/>
+					<flowable:field name="to" expression="${environment.getProperty('mail.providerapplication.enrollment.approval.to')}"/>
+					<flowable:field name="cc" expression="${environment.getProperty('mail.providerapplication.enrollment.approval.cc')}"/>
+					<flowable:field name="subject" expression="${environment.getProperty('mail.providerapplication.enrollment.approval.subject')}"/>
+					<flowable:field name="text">
+						<flowable:string><![CDATA[Approved]]></flowable:string>
+					</flowable:field>
+					<flowable:field name="html">
+						<flowable:string><![CDATA[<h2>Dear Provider,</h2>Your Enrollment Application is Approved ...]]></flowable:string>
+					</flowable:field>
+				</extensionElements>
+			</serviceTask>
+		<serviceTask id="providerApplicationEnrollmentRejectionMail" name="Enrollment Rejection Mail"
+			flowable:delegateExpression="${providerApplicationEnrollmentRejectionMail}" />
+		<serviceTask id="providerApplicationModificationProcessingDefaultOrgAssignment" name="Modification Default Org Assignment"
+			flowable:delegateExpression="${providerApplicationModificationProcessingDefaultOrgAssignment}" />
+		<parallelGateway  id="providerApplicationModificationProcessingParallelMailStart" name="Modification Notification mail to Org and Provider Start" />
+		<serviceTask id="providerApplicationModificationProcessingMailToOrg" name="Modification Mail To Org"
+			flowable:delegateExpression="${providerApplicationModificationProcessingMailToOrg}" />
+		<serviceTask id="providerApplicationModificationProcessingMailToProvider" name="Modification Mail To Provider"
+			flowable:delegateExpression="${providerApplicationModificationProcessingMailToProvider}" />
+		<parallelGateway  id="providerApplicationModificationProcessingParallelMailEnd" name="Modification Notification mail to Org and Provider End" />
+		<inclusiveGateway id="providerApplicationModificationAssignmentStart" />
+		<userTask id="providerApplicationModificationAssignmentClaimTask" name="Claim Task" />
+		<userTask id="providerApplicationModificationAssignmentAssignTask" name="Assign Task" />
+		<userTask id="providerApplicationModificationAssignmentReassignTask" name="Reassign Task" />
+		<inclusiveGateway id="providerApplicationModificationAssignmentEnd" />
+		<userTask id="providerApplicationModificationProcessing" name="Modification Processing" />
+		<exclusiveGateway id="providerApplicationModificationProcessingDecision" name="Modification Approved or Rejected" />
+		<serviceTask id="providerApplicationModificationApprovalMail" name="Modification Approval Mail"
+			flowable:delegateExpression="${providerApplicationModificationApprovalMail}" />
+		<serviceTask id="providerApplicationModificationRejectionMail" name="Modification Rejection Mail"
+			flowable:delegateExpression="${providerApplicationModificationRejectionMail}" />
+
+
+		<startEvent id="providerApplicationStartEvent" />
+		<sequenceFlow id="flow01" sourceRef="providerApplicationStartEvent" targetRef="providerApplicationSubmission" />
+		<sequenceFlow id="flow02" sourceRef="providerApplicationSubmission" targetRef="providerApplicationTypeDecision" name="Enrollment or Modification"/>
+		<sequenceFlow id="flow03" sourceRef="providerApplicationTypeDecision" targetRef="providerApplicationEnrollmentProcessingDefaultOrgAssignment" >
+			<conditionExpression xsi:type="tFormalExpression">
+				<![CDATA[
+					${isEnrollment}
+				]]>
+			</conditionExpression>
+		</sequenceFlow>
+		<sequenceFlow id="flow04" sourceRef="providerApplicationTypeDecision" targetRef="providerApplicationModificationProcessingDefaultOrgAssignment" >
+			<conditionExpression xsi:type="tFormalExpression">
+				<![CDATA[
+					${!isEnrollment}
+				]]>
+			</conditionExpression>
+		</sequenceFlow>
+		<sequenceFlow id="flow05" sourceRef="providerApplicationEnrollmentProcessingDefaultOrgAssignment" targetRef="providerApplicationEnrollmentProcessingParallelMailStart" />
+		<sequenceFlow id="flow06" sourceRef="providerApplicationEnrollmentProcessingParallelMailStart" targetRef="providerApplicationEnrollmentProcessingMailToOrg" />
+		<sequenceFlow id="flow07" sourceRef="providerApplicationEnrollmentProcessingParallelMailStart" targetRef="providerApplicationEnrollmentProcessingMailToProvider" />
+		<sequenceFlow id="flow08" sourceRef="providerApplicationEnrollmentProcessingMailToOrg" targetRef="providerApplicationEnrollmentProcessingParallelMailEnd" />
+		<sequenceFlow id="flow09" sourceRef="providerApplicationEnrollmentProcessingMailToProvider" targetRef="providerApplicationEnrollmentProcessingParallelMailEnd" />
+		<sequenceFlow id="flow10" sourceRef="providerApplicationEnrollmentProcessingParallelMailEnd" targetRef="providerApplicationEnrollmentAssignmentStart" />
+		<sequenceFlow id="flow11" sourceRef="providerApplicationEnrollmentAssignmentStart" targetRef="providerApplicationEnrollmentAssignmentClaimTask">
+			<conditionExpression xsi:type="tFormalExpression">
+				<![CDATA[
+					${!hasAdminProfile && assignee == null}
+				]]>
+			</conditionExpression>
+		</sequenceFlow>
+		<sequenceFlow id="flow12" sourceRef="providerApplicationEnrollmentAssignmentStart" targetRef="providerApplicationEnrollmentAssignmentAssignTask">
+			<conditionExpression xsi:type="tFormalExpression">
+				<![CDATA[
+					${hasAdminProfile && assignee == null}
+				]]>
+			</conditionExpression>
+		</sequenceFlow>
+		<sequenceFlow id="flow13" sourceRef="providerApplicationEnrollmentAssignmentStart" targetRef="providerApplicationEnrollmentAssignmentReassignTask">
+			<conditionExpression xsi:type="tFormalExpression">
+				<![CDATA[
+					${hasAdminProfile && assignee != null}
+				]]>
+			</conditionExpression>
+		</sequenceFlow>
+		<sequenceFlow id="flow14" sourceRef="providerApplicationEnrollmentAssignmentClaimTask" targetRef="providerApplicationEnrollmentAssignmentEnd" />
+		<sequenceFlow id="flow15" sourceRef="providerApplicationEnrollmentAssignmentAssignTask" targetRef="providerApplicationEnrollmentAssignmentEnd" />
+		<sequenceFlow id="flow16" sourceRef="providerApplicationEnrollmentAssignmentReassignTask" targetRef="providerApplicationEnrollmentAssignmentEnd" />
+		<sequenceFlow id="flow17" sourceRef="providerApplicationEnrollmentAssignmentEnd" targetRef="providerApplicationEnrollmentProcessing" />
+		<sequenceFlow id="flow18" sourceRef="providerApplicationEnrollmentProcessing" targetRef="providerApplicationEnrollmentProcessingDecision" />
+		<sequenceFlow id="flow19" sourceRef="providerApplicationEnrollmentProcessingDecision" targetRef="providerApplicationEnrollmentApprovalMail">
+			<conditionExpression xsi:type="tFormalExpression">
+				<![CDATA[
+					${isEnrollmentApproved}
+				]]>
+			</conditionExpression>
+		</sequenceFlow>
+		<sequenceFlow id="flow20" sourceRef="providerApplicationEnrollmentProcessingDecision" targetRef="providerApplicationEnrollmentRejectionMail">
+			<conditionExpression xsi:type="tFormalExpression">
+				<![CDATA[
+					${!isEnrollmentApproved}
+				]]>
+			</conditionExpression>
+		</sequenceFlow>
+		<sequenceFlow id="flow21" sourceRef="providerApplicationEnrollmentApprovalMail" targetRef="providerApplicationEndEvent" />
+		<sequenceFlow id="flow22" sourceRef="providerApplicationEnrollmentRejectionMail" targetRef="providerApplicationEndEvent" />
+		<sequenceFlow id="flow23" sourceRef="providerApplicationModificationProcessingDefaultOrgAssignment" targetRef="providerApplicationModificationProcessingParallelMailStart" />
+		<sequenceFlow id="flow24" sourceRef="providerApplicationModificationProcessingParallelMailStart" targetRef="providerApplicationModificationProcessingMailToOrg" />
+		<sequenceFlow id="flow25" sourceRef="providerApplicationModificationProcessingParallelMailStart" targetRef="providerApplicationModificationProcessingMailToProvider" />
+		<sequenceFlow id="flow26" sourceRef="providerApplicationModificationProcessingMailToOrg" targetRef="providerApplicationModificationProcessingParallelMailEnd" />
+		<sequenceFlow id="flow27" sourceRef="providerApplicationModificationProcessingMailToProvider" targetRef="providerApplicationModificationProcessingParallelMailEnd" />
+		<sequenceFlow id="flow28" sourceRef="providerApplicationModificationProcessingParallelMailEnd" targetRef="providerApplicationModificationAssignmentStart" />
+		<sequenceFlow id="flow29" sourceRef="providerApplicationModificationAssignmentStart" targetRef="providerApplicationModificationAssignmentClaimTask">
+			<conditionExpression xsi:type="tFormalExpression">
+				<![CDATA[
+					${!hasAdminProfile && assignee == null}
+				]]>
+			</conditionExpression>
+		</sequenceFlow>
+		<sequenceFlow id="flow30" sourceRef="providerApplicationModificationAssignmentStart" targetRef="providerApplicationModificationAssignmentAssignTask">
+			<conditionExpression xsi:type="tFormalExpression">
+				<![CDATA[
+					${hasAdminProfile && assignee == null}
+				]]>
+			</conditionExpression>
+		</sequenceFlow>
+		<sequenceFlow id="flow31" sourceRef="providerApplicationModificationAssignmentStart" targetRef="providerApplicationModificationAssignmentReassignTask">
+			<conditionExpression xsi:type="tFormalExpression">
+				<![CDATA[
+					${hasAdminProfile && assignee != null}
+				]]>
+			</conditionExpression>
+		</sequenceFlow>
+		<sequenceFlow id="flow32" sourceRef="providerApplicationModificationAssignmentClaimTask" targetRef="providerApplicationModificationAssignmentEnd" />
+		<sequenceFlow id="flow33" sourceRef="providerApplicationModificationAssignmentAssignTask" targetRef="providerApplicationModificationAssignmentEnd" />
+		<sequenceFlow id="flow34" sourceRef="providerApplicationModificationAssignmentReassignTask" targetRef="providerApplicationModificationAssignmentEnd" />
+		<sequenceFlow id="flow35" sourceRef="providerApplicationModificationAssignmentEnd" targetRef="providerApplicationModificationProcessing" />
+		<sequenceFlow id="flow36" sourceRef="providerApplicationModificationProcessing" targetRef="providerApplicationModificationProcessingDecision" />
+		<sequenceFlow id="flow37" sourceRef="providerApplicationModificationProcessingDecision" targetRef="providerApplicationModificationApprovalMail">
+			<conditionExpression xsi:type="tFormalExpression">
+				<![CDATA[
+					${isModificationApproved}
+				]]>
+			</conditionExpression>
+		</sequenceFlow>
+		<sequenceFlow id="flow38" sourceRef="providerApplicationModificationProcessingDecision" targetRef="providerApplicationModificationRejectionMail">
+			<conditionExpression xsi:type="tFormalExpression">
+				<![CDATA[
+					${!isModificationApproved}
+				]]>
+			</conditionExpression>
+		</sequenceFlow>
+		<sequenceFlow id="flow39" sourceRef="providerApplicationModificationApprovalMail" targetRef="providerApplicationEndEvent" />
+		<sequenceFlow id="flow40" sourceRef="providerApplicationModificationRejectionMail" targetRef="providerApplicationEndEvent" />
+		<endEvent id="providerApplicationEndEvent" />
+
+	</process>
+
+</definitions>

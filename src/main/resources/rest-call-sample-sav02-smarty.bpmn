@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+	xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:omgdc="http://www.omg.org/spec/DD/20100524/DC"
+	xmlns:omgdi="http://www.omg.org/spec/DD/20100524/DI" xmlns:flowable="http://flowable.org/bpmn"
+	typeLanguage="http://www.w3.org/2001/XMLSchema" expressionLanguage="http://www.w3.org/1999/XPath"
+	targetNamespace="http://www.flowable.org/processdef">
+
+	<process id="restCallRequest" name="Rest Call Request" isExecutable="true">
+
+		<startEvent id="restCallRequestStartEvent" />
+
+		<sequenceFlow sourceRef="restCallRequestStartEvent" targetRef="restCallServiceTask" />
+
+		<serviceTask id="restCallServiceTask" name="Rest Call Service request" flowable:type="http">
+			<extensionElements>
+				<!-- <flowable:field name="httpActivityBehaviorClass"> -->
+				<!-- <flowable:string><![CDATA[org.example.flowable.HttpActivityBehaviorCustomImpl]]></flowable:string> -->
+				<!-- </flowable:field> -->
+				<flowable:field name="requestMethod" stringValue="GET" />
+<!-- 				<flowable:field name="requestUrl" stringValue="http://flowable.org" /> -->
+<!-- 				<flowable:field name="requestUrl" stringValue="https://172.27.242.101:5502/cldwebservice/rest/gdrCacheService/documentRepoClassConfigCacheService/v1/getDocumentClassConfig" /> -->
+				<flowable:field name="requestUrl" stringValue="https://us-street.api.smartystreets.com/street-address?auth-id=zikzakjack&amp;auth-token=zikzakjack&amp;street=1600 amphitheatre pkwy&amp;city=mountain view&amp;state=CA&amp;zipcode=94043&amp;candidates=10" />
+<!-- 				<flowable:field name="requestHeaders"> -->
+<!-- 					<flowable:expression> -->
+<!-- 						<![CDATA[ -->
+<!-- 							Content-Type:application/json -->
+<!-- 							domain: zikzakjack -->
+<!-- 							AccessId: zikzakjack -->
+<!-- 							AccessKey: zikzakjack -->
+<!-- 						]]> -->
+<!-- 					</flowable:expression> -->
+<!-- 				</flowable:field> -->
+				<!-- <flowable:field name="resultVariablePrefix"> -->
+				<!-- <flowable:string>restCallResponsePayload</flowable:string> -->
+				<!-- </flowable:field> -->
+			</extensionElements>
+		</serviceTask>
+		<!-- flowable:class="zikzakjack.services.RestCallServiceTaskJavaDelegate" /> -->
+
+		<sequenceFlow sourceRef="restCallServiceTask" targetRef="theScriptTask" />
+
+		<scriptTask id="theScriptTask" name="Execute script" scriptFormat="groovy">
+			<script>
+				def responseBody = execution.getVariable("restCallServiceTaskResponseBody")
+				org.slf4j.LoggerFactory.getLogger("theScriptTask").info("responseBody: {}", restCallServiceTaskResponseBody)
+			</script>
+		</scriptTask>
+
+		<sequenceFlow sourceRef="theScriptTask" targetRef="restCallRequestEndEvent" />
+
+		<endEvent id="restCallRequestEndEvent" />
+
+	</process>
+
+</definitions>
